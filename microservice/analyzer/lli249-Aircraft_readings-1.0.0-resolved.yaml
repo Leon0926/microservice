@@ -1,0 +1,192 @@
+openapi: 3.0.0
+info:
+  title: Analyzer API
+  description: This API provides analyzer info 
+  contact:
+    email: 102eon@gmail.com
+  version: 1.0.0
+servers:
+- url: /
+tags:
+- name: aircraft
+  description: Operations available to aircraft in flight
+paths:
+  /readings/location:
+    get:
+      summary: gets location readings from history
+      description: Gets Location readings from event store
+      operationId: app.get_aircraft_location_reading
+      parameters:
+        - name: index
+          in: query
+          description: Gets the location reading at this index in the event store
+          schema:
+            type: integer
+            example: 100
+      responses:
+        "200":
+          description: Successfully returned a location event
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LocationReading'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /readings/time-until-arrival:
+    get:
+      summary: gets time-until-arrival readings from history
+      description: Gets time-until-arrival readings from event store
+      operationId: app.get_aircraft_time_until_arrival_reading
+      parameters:
+        - name: index
+          in: query
+          description: Gets the time-until-arrival reading at this index in the event store
+          schema:
+            type: integer
+            example: 100
+      responses:
+        "200":
+          description: Successfully returned a time-until-arrival event
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TimeUntilArrivalReading'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /stats:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_event_stats
+      description: Gets the stats of the history events
+      responses:
+        '200':
+          description: Successfully returned event stats
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/EventStats'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+components:
+  schemas:
+    LocationReading:
+      required:
+      - altitude
+      - flight_id
+      - latitude
+      - longitude
+      - timestamp
+      type: object
+      properties:
+        flight_id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        latitude:
+          type: number
+          format: float
+          example: 39.8348
+        longitude:
+          type: number
+          format: float
+          example: -123.4235
+        altitude:
+          type: number
+          format: float
+          example: 30000
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-08-29T09:12:33.001Z
+    TimeUntilArrivalReading:
+      required:
+      - actual_arrival_time
+      - estimated_arrival_time
+      - flight_id
+      - time_difference_in_ms
+      - timestamp
+      type: object
+      properties:
+        flight_id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+        estimated_arrival_time:
+          type: string
+          format: datetime
+          example: 2024-09-09T15:45:00Z
+        actual_arrival_time:
+          type: string
+          format: datetime
+          example: 2024-09-09T15:49:00Z
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-08-29T09:12:33.001Z
+        time_difference_in_ms:
+          type: number
+          description: Difference between the previous actual_arrival_time reading and the current actual_arrival_time reading
+          format: integer
+          example: 60000
+    EventStats:
+      required:
+        - num_location_readings
+        - max_location_latitude_reading
+        - num_time_until_arrival_readings
+        - max_time_until_arrival_time_difference_in_ms_reading
+      properties:
+        num_location_readings:
+          type: integer
+          example: 100000
+        max_location_latitude_reading:
+          type: number
+          example: 39.8348
+        num_time_until_arrival_readings:
+          type: integer
+          example: 100000
+        max_time_until_arrival_time_difference_in_ms_reading:
+          type: integer
+          example: 60000

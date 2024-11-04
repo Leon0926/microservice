@@ -1,0 +1,186 @@
+openapi: 3.0.0
+info:
+  title: Aircraft Reading API
+  description: This API receives reading events from commercial aircrafts in flight.
+  contact:
+    email: 102eon@gmail.com
+  version: 1.0.0
+servers:
+- url: /
+tags:
+- name: aircraft
+  description: Operations available to aircraft in flight
+paths:
+  /readings/location:
+    post:
+      tags:
+      - aircraft
+      summary: Reports the current location of an aircraft
+      description: Adds a new location reading to the system
+      operationId: app.report_aircraft_location
+      requestBody:
+        description: Location reading to add
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationReading'
+      responses:
+        "201":
+          description: item created
+        "400":
+          description: "invalid input, object invalid"
+    get:
+      tags:
+      - aircraft
+      summary: gets new aircraft location readings
+      description: Gets location readings added after a timestamp
+      operationId: app.get_aircraft_location
+      parameters:
+        - name: start_timestamp
+          in: query
+          description: Limits the number of readings returned starting from this timestamp
+          schema:
+            type: string
+            format: date-time
+            example: "2024-10-14T09:56:32.977743"
+        - name: end_timestamp
+          in: query
+          description: Limits the number of readings returned up to this timestamp
+          schema:
+            type: string
+            format: date-time
+            example: "2024-10-15T09:56:32.977743"
+      responses:
+        "200":
+          description: Successfully returned a list of location events
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LocationReading'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /readings/time-until-arrival:
+    post:
+      tags:
+      - aircraft
+      summary: Reports the time until the aircraft's arrival
+      description: Adds a new arrival time reading to the system
+      operationId: app.report_time_until_arrival
+      requestBody:
+        description: Time until arrival reading to add
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeUntilArrivalReading'
+      responses:
+        "201":
+          description: item created
+        "400":
+          description: "invalid input, object invalid"
+    get:
+      tags:
+      - aircraft
+      summary: gets new aircraft time-until-arrival readings
+      description: Gets time-until-arrival readings added after a timestamp
+      operationId: app.get_aircraft_time_until_arrival
+      parameters:
+        - name: start_timestamp
+          in: query
+          description: Limits the number of readings returned starting from this timestamp
+          schema:
+            type: string
+            format: date-time
+            example: "2024-10-01T00:00:00.000Z"
+        - name: end_timestamp
+          in: query
+          description: Limits the number of readings returned up to this timestamp
+          schema:
+            type: string
+            format: date-time
+            example: "2024-10-07T23:59:59.999Z"
+      responses:
+        "200":
+          description: Successfully returned a list of time-until-arrival events
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TimeUntilArrivalReading'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+components:
+  schemas:
+    LocationReading:
+      required:
+      - altitude
+      - flight_id
+      - latitude
+      - longitude
+      - timestamp
+      type: object
+      properties:
+        flight_id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        latitude:
+          type: number
+          format: float
+          example: 39.8348
+        longitude:
+          type: number
+          format: float
+          example: -123.4235
+        altitude:
+          type: number
+          format: float
+          example: 30000
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-08-29T09:12:33.001Z
+    TimeUntilArrivalReading:
+      required:
+      - actual_arrival_time
+      - estimated_arrival_time
+      - flight_id
+      - time_difference_in_ms
+      - timestamp
+      type: object
+      properties:
+        flight_id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+        estimated_arrival_time:
+          type: string
+          format: datetime
+          example: 2024-09-09T15:45:00Z
+        actual_arrival_time:
+          type: string
+          format: datetime
+          example: 2024-09-09T15:49:00Z
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-08-29T09:12:33.001Z
+        time_difference_in_ms:
+          type: number
+          description: Difference between the previous actual_arrival_time reading and the current actual_arrival_time reading
+          format: integer
+          example: 60000

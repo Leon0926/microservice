@@ -1,0 +1,9 @@
+version: 1
+datastore: 
+  filename: data.json
+eventstore:
+  url: http://localhost:8110
+events:
+   hostname: lab6kafka.canadacentral.cloudapp.azure.com
+   port: 9092
+   topic: events

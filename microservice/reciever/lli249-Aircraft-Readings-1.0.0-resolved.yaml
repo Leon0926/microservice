@@ -1,0 +1,110 @@
+openapi: 3.0.0
+info:
+  title: Aircraft Reading API
+  description: This API receives reading events from commercial aircrafts in flight.
+  contact:
+    email: 102eon@gmail.com
+  version: 1.0.0
+servers:
+- url: /
+tags:
+- name: aircraft
+  description: Operations available to aircraft in flight
+paths:
+  /readings/location:
+    post:
+      tags:
+      - aircraft
+      summary: Reports the current location of an aircraft
+      description: Adds a new location reading to the system
+      operationId: app.report_aircraft_location
+      requestBody:
+        description: Location reading to add
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationReading'
+      responses:
+        "201":
+          description: item created
+        "400":
+          description: "invalid input, object invalid"
+  /readings/time-until-arrival:
+    post:
+      tags:
+      - aircraft
+      summary: Reports the time until the aircraft's arrival
+      description: Adds a new arrival time reading to the system
+      operationId: app.report_time_until_arrival
+      requestBody:
+        description: Time until arrival reading to add
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeUntilArrivalReading'
+      responses:
+        "201":
+          description: item created
+        "400":
+          description: "invalid input, object invalid"
+components:
+  schemas:
+    LocationReading:
+      required:
+      - altitude
+      - flight_id
+      - latitude
+      - longitude
+      - timestamp
+      type: object
+      properties:
+        flight_id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        latitude:
+          type: number
+          format: float
+          example: 39.8348
+        longitude:
+          type: number
+          format: float
+          example: -123.4235
+        altitude:
+          type: number
+          format: float
+          example: 30000
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-08-29T09:12:33.001Z
+    TimeUntilArrivalReading:
+      required:
+      - actual_arrival_time
+      - estimated_arrival_time
+      - flight_id
+      - time_difference_in_ms
+      - timestamp
+      type: object
+      properties:
+        flight_id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+        estimated_arrival_time:
+          type: string
+          format: datetime
+          example: 2024-09-09T15:45:00Z
+        actual_arrival_time:
+          type: string
+          format: datetime
+          example: 2024-09-09T15:49:00Z
+        timestamp:
+          type: string
+          format: datetime
+          example: 2024-09-09T15:05:00Z
+        time_difference_in_ms:
+          type: number
+          description: Difference between the previous actual_arrival_time reading and the current actual_arrival_time reading
+          format: integer
+          example: 60000

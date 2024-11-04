@@ -1,0 +1,55 @@
+openapi: 3.0.0
+info:
+  description: This API provides event stats
+  version: 1.0.0
+  title: Event Stats API
+  contact:
+    email: lli249@my.bcit.ca
+
+paths:
+  /stats:
+    get:
+      summary: Get event stats
+      operationId: app.get_stats
+      description: Gets aircraft location and time-until-arrival processed statistics
+      responses:
+        '200':
+          description: Successfully returned event stats
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/EventStats'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+components:
+  schemas:
+    EventStats:
+      required:
+        - num_location_readings
+        - max_location_latitude_reading
+        - num_time_until_arrival_readings
+        - max_time_until_arrival_time_difference_in_ms_reading
+      properties:
+        num_location_readings:
+          type: integer
+          example: 100000
+        max_location_latitude_reading:
+          type: number
+          example: 39.8348
+        num_time_until_arrival_readings:
+          type: integer
+          example: 100000
+        max_time_until_arrival_time_difference_in_ms_reading:
+          type: integer
+          example: 60000
+      type: object
+        
