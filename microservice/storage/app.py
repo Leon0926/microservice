@@ -16,7 +16,15 @@ from threading import Thread
 with open('app_conf.yml', 'r') as f:
     app_config = yaml.safe_load(f.read())
 
-DB_ENGINE = create_engine(f'mysql+pymysql://{app_config['datastore']['user']}:{app_config['datastore']['password']}@{app_config['datastore']['hostname']}:{app_config['datastore']['port']}/{app_config['datastore']['db']}')
+user = app_config['datastore']['user']
+password = app_config['datastore']['password']
+hostname = app_config['datastore']['hostname']
+port = app_config['datastore']['port']
+db = app_config['datastore']['db']
+
+DB_ENGINE = create_engine(f'mysql+pymysql://{user}:{password}@{hostname}:{port}/{db}')
+
+#DB_ENGINE = create_engine(f'mysql+pymysql://{app_config['datastore']['user']}:{app_config['datastore']['password']}@{app_config['datastore']['hostname']}:{app_config['datastore']['port']}/{app_config['datastore']['db']}')
 Session = sessionmaker(bind=DB_ENGINE)
 
 with open('log_conf.yml', 'r') as f:

@@ -14,6 +14,7 @@ from pykafka import KafkaClient
 EVENT_FILE = "events.json" """
 DATA_STORAGE_URL="http://localhost:8090/readings"
 
+
 """ def update_event(event_type, msg_data):
     if not os.path.exists(EVENT_FILE):
         events_data = {
@@ -65,7 +66,7 @@ def report_aircraft_location(body):
     #logger.info(f"Returned event {event_name} response (Id: {trace_id}) with status {response.status_code}")
     #update_event("aircraft_location", msg_data) 
     reading = body
-    client = KafkaClient(hosts=f'{app_config['events']['hostname']}:{app_config['events']['port']}')
+    #client = KafkaClient(hosts=f'{app_config['events']['hostname']}:{app_config['events']['port']}')
     topic = client.topics[str.encode(app_config['events']['topic'])]
     producer = topic.get_sync_producer()
     msg = { "type": "location_reading",
@@ -93,7 +94,7 @@ def report_time_until_arrival(body):
     #logger.info(f"Returned event {event_name} response (Id: {trace_id}) with status {response.status_code}")
     #update_event("arrival_time", msg_data)
     reading = body
-    client = KafkaClient(hosts=f'{app_config['events']['hostname']}:{app_config['events']['port']}')
+    #client = KafkaClient(hosts=f'{app_config['events']['hostname']}:{app_config['events']['port']}')
     topic = client.topics[str.encode(app_config['events']['topic'])]
     producer = topic.get_sync_producer()
     msg = { "type": "time_until_arrival_reading",
@@ -113,6 +114,11 @@ app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml",
 
 with open('app_conf.yml', 'r') as f:
     app_config = yaml.safe_load(f.read())
+    
+hostname = app_config['events']['hostname']
+port = app_config['events']['port']
+client = KafkaClient(hosts=f'{hostname}:{port}')
+
 
 with open('log_conf.yml', 'r') as f:
     log_config = yaml.safe_load(f.read())
