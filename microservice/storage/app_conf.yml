@@ -1,7 +1,7 @@
 version: 1
 datastore:
   user: user
-  password: 
+  password:  
   hostname: lab6kafka.canadacentral.cloudapp.azure.com
   port: 3306  
   db: events

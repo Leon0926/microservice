@@ -62,7 +62,7 @@ def populate_stats():
     
     print(location_url.status_code)
     logger.debug(f"Querying location events from {last_updated} to {current_time}")
-    print(location_url.json())
+    
 
 
     
@@ -134,4 +134,4 @@ app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml",
 
 if __name__ == "__main__":
     init_scheduler()
-    app.run(port=8100)
+    app.run(host='0.0.0.0',port=8100)

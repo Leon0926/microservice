@@ -179,7 +179,7 @@ if __name__ == "__main__":
     t1.setDaemon(True)
     t1.start()
 
-    app.run(port=8090)
+    app.run(host='0.0.0.0',port=8090)
     logger.info(f"Connecting to DB. Hostname: {app_config['datastore']['hostname']}, Port: {app_config['datastore']['port']}")
     
     

@@ -12,23 +12,6 @@ tags:
   description: Operations available to aircraft in flight
 paths:
   /readings/location:
-    post:
-      tags:
-      - aircraft
-      summary: Reports the current location of an aircraft
-      description: Adds a new location reading to the system
-      operationId: app.report_aircraft_location
-      requestBody:
-        description: Location reading to add
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LocationReading'
-      responses:
-        "201":
-          description: item created
-        "400":
-          description: "invalid input, object invalid"
     get:
       tags:
       - aircraft
@@ -68,26 +51,9 @@ paths:
                   message:
                     type: string
   /readings/time-until-arrival:
-    post:
-      tags:
-      - aircraft
-      summary: Reports the time until the aircraft's arrival
-      description: Adds a new arrival time reading to the system
-      operationId: app.report_time_until_arrival
-      requestBody:
-        description: Time until arrival reading to add
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TimeUntilArrivalReading'
-      responses:
-        "201":
-          description: item created
-        "400":
-          description: "invalid input, object invalid"
     get:
       tags:
-      - aircraft
+        - aircraft
       summary: gets new aircraft time-until-arrival readings
       description: Gets time-until-arrival readings added after a timestamp
       operationId: app.get_aircraft_time_until_arrival
