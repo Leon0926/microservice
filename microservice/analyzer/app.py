@@ -8,6 +8,19 @@ import logging.config, logging
 from pykafka import KafkaClient
 from collections import defaultdict
 from flask import jsonify
+from connexion import FlaskApp
+from connexion.middleware import MiddlewarePosition
+from starlette.middleware.cors import CORSMiddleware
+
+app = connexion.FlaskApp(__name__)
+app.add_middleware(
+    CORSMiddleware,
+    position=MiddlewarePosition.BEFORE_EXCEPTION,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app = connexion.FlaskApp(__name__, specification_dir='')
 app.add_api("lli249-Aircraft_readings-1.0.0-resolved.yaml",

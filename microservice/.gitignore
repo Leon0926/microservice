@@ -1,3 +1,4 @@
 .env
 pass.txt
 venv
+dashboard-ui/node_modules/
