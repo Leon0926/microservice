@@ -26,7 +26,8 @@ def get_stats():
         "num_location_readings": stats.get("num_location_readings", 0),
         "max_location_latitude_reading": stats.get("max_location_latitude_reading", 0.0),
         "num_time_until_arrival_readings": stats.get("num_time_until_arrival_readings", 0),
-        "max_time_until_arrival_time_difference_in_ms_reading": stats.get("max_time_until_arrival_time_difference_in_ms_reading", 0)
+        "max_time_until_arrival_time_difference_in_ms_reading": stats.get("max_time_until_arrival_time_difference_in_ms_reading", 0),
+        'last_updated': "2024-10-15T09:56:32.977743"
     }
 
     logger.debug(f"Returning stats: {response}")

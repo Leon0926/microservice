@@ -43,15 +43,14 @@ export default function AppStats() {
 							<td># Time-until-arrival: {stats['max_location_latitude_reading']}</td>
 						</tr>
 						<tr>
-							<td colspan="2">Max Time-until-arrival: {stats['num_time_until_arrival_readings']}</td>
+							<td colSpan="2">Max Time-until-arrival: {stats['num_time_until_arrival_readings']}</td>
 						</tr>
 						<tr>
-							<td colspan="2">Max difference in arrival time: {stats['max_time_until_arrival_time_difference_in_ms_reading']}</td>
+							<td colSpan="2">Max difference in arrival time: {stats['max_time_until_arrival_time_difference_in_ms_reading']}</td>
 						</tr>
 					</tbody>
                 </table>
                 <h3>Last Updated: {stats['last_updated']}</h3>
-
             </div>
         )
     }
