@@ -12,7 +12,12 @@ from connexion import FlaskApp
 from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
 
-app = connexion.FlaskApp(__name__)
+
+app = connexion.FlaskApp(__name__, specification_dir='')
+app.add_api("lli249-Aircraft_readings-1.0.0-resolved.yaml",
+            strict_validation=True,
+            validate_responses=True)
+
 app.add_middleware(
     CORSMiddleware,
     position=MiddlewarePosition.BEFORE_EXCEPTION,
@@ -21,11 +26,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app = connexion.FlaskApp(__name__, specification_dir='')
-app.add_api("lli249-Aircraft_readings-1.0.0-resolved.yaml",
-            strict_validation=True,
-            validate_responses=True)
 
 with open('app_conf.yml', 'r') as f:
     app_config = yaml.safe_load(f.read())
