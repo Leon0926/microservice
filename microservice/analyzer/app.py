@@ -11,7 +11,27 @@ from flask import jsonify
 from connexion import FlaskApp
 from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
+from contextlib import contextmanager
 
+@contextmanager
+def get_kafka_consumer(hostname, topic_name):
+    """Context manager for safely handling Kafka consumer lifecycle"""
+    client = KafkaClient(hosts=hostname)
+    topic = client.topics[str.encode(topic_name)]
+    consumer = topic.get_simple_consumer(
+        reset_offset_on_start=True,
+        consumer_timeout_ms=1000,
+        auto_commit_enable=True
+    )
+    try:
+        yield consumer
+    finally:
+        if consumer:
+            try:
+                consumer.commit_offsets()
+                consumer.stop()
+            except Exception as e:
+                logger.error(f"Error cleaning up consumer: {str(e)}")
 
 app = connexion.FlaskApp(__name__, specification_dir='')
 app.add_api("lli249-Aircraft_readings-1.0.0-resolved.yaml",
@@ -38,97 +58,141 @@ logger = logging.getLogger('basicLogger')
 
 def get_aircraft_location_reading(index):
     """ Get location Reading in History """
-    hostname = "%s:%d" % (app_config["events"]["hostname"],app_config["events"]["port"])
-    client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(app_config["events"]["topic"])]
-    # Here we reset the offset on start so that we retrieve
-    # messages at the beginning of the message queue.
-    # To prevent the for loop from blocking, we set the timeout to
-    # 100ms. There is a risk that this loop never stops if the
-    # index is large and messages are constantly being received!
-    consumer = topic.get_simple_consumer(reset_offset_on_start=True,consumer_timeout_ms=1000)
-    logger.info("Retrieving location at index %d" % index)
-    current_index = 0
+    hostname = "%s:%d" % (app_config["events"]["hostname"], app_config["events"]["port"])
+    
     try:
-        for msg in consumer:
-            msg_str = msg.value.decode('utf-8')
-            msg = json.loads(msg_str)
-                # Find the event at the index you want and
-                # return code 200
-                # i.e., return event,
-            if msg.get("type")== "location_reading":
-                if current_index == index:
-                    event = msg.get("payload")
-                    logger.info("Found location reading at index %d" % (index))
-                    return event, 200
-                current_index += 1
+        with get_kafka_consumer(hostname, app_config["events"]["topic"]) as consumer:
+            logger.info("Retrieving location at index %d" % index)
+            current_index = 0
+            max_retries = 3
+            retry_count = 0
             
-    except:
-        logger.error("No more messages found")
-    logger.error("Could not find BP at index %d" % index)
-    return { "message": "Not Found"}, 404
+            while retry_count < max_retries:
+                try:
+                    for msg in consumer:
+                        if msg is None:
+                            continue
+                            
+                        try:
+                            msg_str = msg.value.decode('utf-8')
+                            msg = json.loads(msg_str)
+                            
+                            if msg.get("type") == "location_reading":
+                                if current_index == index:
+                                    event = msg.get("payload")
+                                    if event:
+                                        logger.info("Found location reading at index %d" % index)
+                                        return event, 200
+                                current_index += 1
+                                
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Error decoding message: {str(e)}")
+                            continue
+                    break  # If we get here without finding the index, break the retry loop
+                    
+                except Exception as e:
+                    logger.error(f"Error reading messages (attempt {retry_count + 1}): {str(e)}")
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        return {"message": "Error reading messages"}, 500
+                    continue
+                    
+    except Exception as e:
+        logger.error(f"Error connecting to Kafka: {str(e)}")
+        return {"message": "Error connecting to message broker"}, 500
 
+    logger.error(f"Could not find location reading at index {index}. Max index reached: {current_index}")
+    return {"message": f"Not Found. Max index available: {current_index}"}, 404
 
 def get_aircraft_time_until_arrival_reading(index):
     """ Get time-until-arrival Reading in History """
-    hostname = "%s:%d" % (app_config["events"]["hostname"],app_config["events"]["port"])
-    client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(app_config["events"]["topic"])]
-    # Here we reset the offset on start so that we retrieve
-    # messages at the beginning of the message queue.
-    # To prevent the for loop from blocking, we set the timeout to
-    # 100ms. There is a risk that this loop never stops if the
-    # index is large and messages are constantly being received!
-    consumer = topic.get_simple_consumer(reset_offset_on_start=True,consumer_timeout_ms=1000)
-    logger.info("Retrieving time-until-arrival at index %d" % index)
-    current_index = 0
+    hostname = "%s:%d" % (app_config["events"]["hostname"], app_config["events"]["port"])
+    
     try:
-        for msg in consumer:
-            msg_str = msg.value.decode('utf-8')
-            msg = json.loads(msg_str)
+        with get_kafka_consumer(hostname, app_config["events"]["topic"]) as consumer:
+            logger.info("Retrieving time-until-arrival at index %d" % index)
+            current_index = 0
+            max_retries = 3
+            retry_count = 0
+            
+            while retry_count < max_retries:
+                try:
+                    for msg in consumer:
+                        if msg is None:
+                            continue
+                            
+                        try:
+                            msg_str = msg.value.decode('utf-8')
+                            msg = json.loads(msg_str)
+                            
+                            if msg.get("type") == "time_until_arrival_reading":
+                                if current_index == index:
+                                    event = msg.get("payload")
+                                    if event:
+                                        logger.info("Found time-until-arrival reading at index %d" % index)
+                                        return event, 200
+                                current_index += 1
+                                
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Error decoding message: {str(e)}")
+                            continue
+                    break  # If we get here without finding the index, break the retry loop
+                    
+                except Exception as e:
+                    logger.error(f"Error reading messages (attempt {retry_count + 1}): {str(e)}")
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        return {"message": "Error reading messages"}, 500
+                    continue
+                    
+    except Exception as e:
+        logger.error(f"Error connecting to Kafka: {str(e)}")
+        return {"message": "Error connecting to message broker"}, 500
 
-            if msg.get("type")== "time_until_arrival_reading":
-                if current_index == index:
-                    event = msg.get("payload")
-                    logger.info("Found time-until-arrival reading at index %d" % (index))
-                    return event, 200
-                current_index += 1
-                # Find the event at the index you want and
-                # return code 200
-                # i.e., return event, 200
-    except:
-        logger.error("No more messages found")
-    logger.error("Could not find time-until-arrival at index %d" % index)
-    return { "message": "Not Found"}, 404
+    logger.error(f"Could not find time-until-arrival reading at index {index}. Max index reached: {current_index}")
+    return {"message": f"Not Found. Max index available: {current_index}"}, 404
 
 def get_event_stats():
-    hostname = "%s:%d" % (app_config["events"]["hostname"],app_config["events"]["port"])
-    client = KafkaClient(hosts=hostname)
-    topic = client.topics[str.encode(app_config["events"]["topic"])]
-    # Here we reset the offset on start so that we retrieve
-    # messages at the beginning of the message queue.
-    # To prevent the for loop from blocking, we set the timeout to
-    # 100ms. There is a risk that this loop never stops if the
-    # index is large and messages are constantly being received!
-    consumer = topic.get_simple_consumer(reset_offset_on_start=True,
-    consumer_timeout_ms=1000)
-    event_counts = defaultdict(int)
-
+    hostname = "%s:%d" % (app_config["events"]["hostname"], app_config["events"]["port"])
+    
     try:
-        for msg in consumer:
-            msg_str = msg.value.decode('utf-8')
-            msg = json.loads(msg_str)
+        with get_kafka_consumer(hostname, app_config["events"]["topic"]) as consumer:
+            event_counts = defaultdict(int)
+            max_retries = 3
+            retry_count = 0
+            
+            while retry_count < max_retries:
+                try:
+                    for msg in consumer:
+                        if msg is None:
+                            continue
+                            
+                        try:
+                            msg_str = msg.value.decode('utf-8')
+                            msg = json.loads(msg_str)
+                            
+                            event_type = msg.get("type")
+                            if event_type:
+                                event_counts[event_type] += 1
+                                
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Error decoding message: {str(e)}")
+                            continue
+                    break  # If we get here successfully, break the retry loop
+                    
+                except Exception as e:
+                    logger.error(f"Error reading messages (attempt {retry_count + 1}): {str(e)}")
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        return {"message": "Error reading messages"}, 500
+                    continue
 
-            event_type = msg.get("type")
-            if event_type:
-                event_counts[event_type] += 1
-
+            logger.info("Successfully retrieved event type stats")
+            return jsonify(event_counts), 200
+            
     except Exception as e:
-        logger.error(f"Error reading messages: {str(e)}")
-        return jsonify({"message": "Error retrieving stats"}), 500
-
-    logger.info("Successfully retrieved event type stats")
-    return jsonify(event_counts), 200
+        logger.error(f"Error connecting to Kafka: {str(e)}")
+        return {"message": "Error connecting to message broker"}, 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=8110)
+    app.run(host='0.0.0.0', port=8110)
