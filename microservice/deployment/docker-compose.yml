@@ -4,6 +4,8 @@ services:
     image: wurstmeister/zookeeper
     ports:
     - "2181"
+    volumes:
+      - "/home/azureuser/zookeeper/data:/opt/zookeeper-3.4.13/data"
     hostname: zookeeper
   kafka:
     image: wurstmeister/kafka
@@ -19,8 +21,11 @@ services:
       KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:29092,OUTSIDE://lab6kafka.canadacentral.cloudapp.azure.com:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOGS_DIRS: /kafka/kafka-logs
+      KAFKA_BROKER_ID: 1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /home/azureuser/kafka:/kafka/kafka-logs
     depends_on:
     - "zookeeper"
   db:
@@ -31,9 +36,9 @@ services:
       # So you don't have to use root, but you can if you like
       MYSQL_USER: 'user'
       # You can use whatever password you like
-      MYSQL_PASSWORD: ''
+      MYSQL_PASSWORD: 'ACIT3855'
       # Password for root access
-      MYSQL_ROOT_PASSWORD: ''
+      MYSQL_ROOT_PASSWORD: 'ACIT3855'
     ports:
       # <Port exposed> : < MySQL Port running inside container>
     - '3306:3306'
