@@ -22,7 +22,10 @@ hostname = app_config['datastore']['hostname']
 port = app_config['datastore']['port']
 db = app_config['datastore']['db']
 
-DB_ENGINE = create_engine(f'mysql+pymysql://{user}:{password}@{hostname}:{port}/{db}')
+DB_ENGINE = create_engine(f'mysql+pymysql://{user}:{password}@{hostname}:{port}/{db}',
+                            pool_size=5,
+                            pool_recycle=3600,
+                            pool_pre_ping=True)
 
 #DB_ENGINE = create_engine(f'mysql+pymysql://{app_config['datastore']['user']}:{app_config['datastore']['password']}@{app_config['datastore']['hostname']}:{app_config['datastore']['port']}/{app_config['datastore']['db']}')
 Session = sessionmaker(bind=DB_ENGINE)

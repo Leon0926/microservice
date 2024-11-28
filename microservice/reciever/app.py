@@ -62,7 +62,7 @@ def report_aircraft_location(body):
             datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "payload": reading }
     msg_str = json.dumps(msg)
-    kafka_producer.producer.produce(msg_str.encode('utf-8'))
+    kafka_producer.produce(msg_str.encode('utf-8'))
     return NoContent, 201
 
 def report_time_until_arrival(body):
@@ -78,7 +78,7 @@ def report_time_until_arrival(body):
             datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "payload": reading }
     msg_str = json.dumps(msg)
-    kafka_producer.producer.produce(msg_str.encode('utf-8'))
+    kafka_producer.produce(msg_str.encode('utf-8'))
     
     return NoContent, 201
 
@@ -90,30 +90,18 @@ app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml",
 with open('app_conf.yml', 'r') as f:
     app_config = yaml.safe_load(f.read())
     
-# hostname = app_config['events']['hostname']
-# port = app_config['events']['port']
-# client = KafkaClient(hosts=f'{hostname}:{port}')
+hostname = app_config['events']['hostname']
+port = app_config['events']['port']
+client = KafkaClient(hosts=f'{hostname}:{port}')
 
-class KafkaProducer:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            hostname = app_config['events']['hostname']
-            port = app_config['events']['port']
-            cls._instance.client = KafkaClient(hosts=f'{hostname}:{port}')
-            cls._instance.topic = cls._instance.client.topics[str.encode(app_config['events']['topic'])]
-            cls._instance.producer = cls._instance.topic.get_sync_producer()
-        return cls._instance
+kafka_topic = client.topics[str.encode(app_config['events']['topic'])]
+kafka_producer = kafka_topic.get_sync_producer()
 
 with open('log_conf.yml', 'r') as f:
     log_config = yaml.safe_load(f.read())
     logging.config.dictConfig(log_config)
     
 logger = logging.getLogger('basicLogger')
-
-kafka_producer = KafkaProducer()
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0',port=8080)
