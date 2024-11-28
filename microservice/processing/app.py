@@ -67,12 +67,10 @@ def populate_stats():
     print(location_url.status_code)
     logger.debug(f"Querying location events from {last_updated} to {current_time}")
     
-
-
-    
     try:
         if location_url.status_code == 201:
             location_events = location_url.json()
+            print("LOCATION_URL.JSON\n\n",location_events)
 
             #number of location readings
             num_location_events = len(location_events)
