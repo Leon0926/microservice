@@ -14,7 +14,6 @@ from pykafka import KafkaClient
 EVENT_FILE = "events.json" """
 DATA_STORAGE_URL="http://localhost:8090/readings"
 
-
 """ def update_event(event_type, msg_data):
     if not os.path.exists(EVENT_FILE):
         events_data = {
@@ -52,21 +51,10 @@ def generate_trace_id():
     return str(uuid.uuid4())
 
 def report_aircraft_location(body):
-    #print("Received aircraft location")
-    #print(body) 
-    #msg_data = "Aircraft location for " + body["flight_id"] + " has latitude: " + str(body["latitude"]) + " and longitude: " + str(body["longitude"])
-    #response = requests.post(DATA_STORAGE_URL + "/location", json=body, headers={"Content-Type": "application/json"})
-    
     event_name = "location"
     trace_id = generate_trace_id()
     body["trace_id"] = trace_id
-
-    #logger.info(f'Received event {event_name} request with a trace id of {trace_id}')
-    ###response = requests.post(app_config['eventstore1']['url'], json=body, headers={"Content-Type": "application/json"})
-    #logger.info(f"Returned event {event_name} response (Id: {trace_id}) with status {response.status_code}")
-    #update_event("aircraft_location", msg_data) 
     reading = body
-    #client = KafkaClient(hosts=f'{app_config['events']['hostname']}:{app_config['events']['port']}')
     topic = client.topics[str.encode(app_config['events']['topic'])]
     producer = topic.get_sync_producer()
     msg = { "type": "location_reading",
@@ -74,27 +62,15 @@ def report_aircraft_location(body):
             datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "payload": reading }
     msg_str = json.dumps(msg)
-    producer.produce(msg_str.encode('utf-8'))
-
-    ###return NoContent, response.status_code
+    kafka_producer.producer.produce(msg_str.encode('utf-8'))
     return NoContent, 201
 
 def report_time_until_arrival(body):
-    #print("Received time until arrival")
-    #print(body)
-    #msg_data = "Time until arrival for " + body["flight_id"] + " is " + body["actual_arrival_time"]
-    #response = requests.post(DATA_STORAGE_URL + "/time-until-arrival", json=body, headers={"Content-Type": "application/json"})
     
     event_name = "time_until_arrival"
     trace_id = generate_trace_id()
     body["trace_id"] = trace_id
-    
-    #logger.info(f'Received event {event_name} request with a trace id of {trace_id}')
-    ###response = requests.post(app_config['eventstore2']['url'], json=body, headers={"Content-Type": "application/json"})
-    #logger.info(f"Returned event {event_name} response (Id: {trace_id}) with status {response.status_code}")
-    #update_event("arrival_time", msg_data)
     reading = body
-    #client = KafkaClient(hosts=f'{app_config['events']['hostname']}:{app_config['events']['port']}')
     topic = client.topics[str.encode(app_config['events']['topic'])]
     producer = topic.get_sync_producer()
     msg = { "type": "time_until_arrival_reading",
@@ -102,9 +78,8 @@ def report_time_until_arrival(body):
             datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "payload": reading }
     msg_str = json.dumps(msg)
-    producer.produce(msg_str.encode('utf-8'))
+    kafka_producer.producer.produce(msg_str.encode('utf-8'))
     
-    #return NoContent, response.status_code
     return NoContent, 201
 
 app = connexion.FlaskApp(__name__, specification_dir='')
@@ -115,16 +90,30 @@ app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml",
 with open('app_conf.yml', 'r') as f:
     app_config = yaml.safe_load(f.read())
     
-hostname = app_config['events']['hostname']
-port = app_config['events']['port']
-client = KafkaClient(hosts=f'{hostname}:{port}')
+# hostname = app_config['events']['hostname']
+# port = app_config['events']['port']
+# client = KafkaClient(hosts=f'{hostname}:{port}')
 
+class KafkaProducer:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            hostname = app_config['events']['hostname']
+            port = app_config['events']['port']
+            cls._instance.client = KafkaClient(hosts=f'{hostname}:{port}')
+            cls._instance.topic = cls._instance.client.topics[str.encode(app_config['events']['topic'])]
+            cls._instance.producer = cls._instance.topic.get_sync_producer()
+        return cls._instance
 
 with open('log_conf.yml', 'r') as f:
     log_config = yaml.safe_load(f.read())
     logging.config.dictConfig(log_config)
     
 logger = logging.getLogger('basicLogger')
+
+kafka_producer = KafkaProducer()
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0',port=8080)
