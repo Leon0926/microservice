@@ -10,11 +10,30 @@ import json
 from pykafka import KafkaClient
 from pykafka.common import OffsetType
 from threading import Thread
+import os
 
 #engine = create_engine('sqlite:///events.db')
 
-with open('app_conf.yml', 'r') as f:
+if "TARGET_ENV" in os.environ and os.environ["TARGET_ENV"] == "test":
+    print("In Test Environment")
+    app_conf_file = "/config/app_conf.yml"
+    log_conf_file = "/config/log_conf.yml"
+else:
+    print("In Dev Environment")
+    app_conf_file = "app_conf.yml"
+    log_conf_file = "log_conf.yml"
+
+with open(app_conf_file, 'r') as f:
     app_config = yaml.safe_load(f.read())
+    
+with open(log_conf_file, 'r') as f:
+    log_config = yaml.safe_load(f.read())
+    logging.config.dictConfig(log_config)
+    
+logger = logging.getLogger('basicLogger')
+
+logger.info("App Conf File: %s" % app_conf_file)
+logger.info("Log Conf File: %s" % log_conf_file)
 
 user = app_config['datastore']['user']
 password = app_config['datastore']['password']
@@ -25,15 +44,11 @@ db = app_config['datastore']['db']
 DB_ENGINE = create_engine(f'mysql+pymysql://{user}:{password}@{hostname}:{port}/{db}',
                             pool_size=5,
                             pool_recycle=3600,
-                            pool_pre_ping=True)
+                            pool_pre_ping=True
+                            )
 
 #DB_ENGINE = create_engine(f'mysql+pymysql://{app_config['datastore']['user']}:{app_config['datastore']['password']}@{app_config['datastore']['hostname']}:{app_config['datastore']['port']}/{app_config['datastore']['db']}')
 Session = sessionmaker(bind=DB_ENGINE)
-
-with open('log_conf.yml', 'r') as f:
-    log_config = yaml.safe_load(f.read())
-    logging.config.dictConfig(log_config)
-logger = logging.getLogger('basicLogger')
 
 """ def report_aircraft_location(body):
     event_name = "location"
@@ -121,14 +136,16 @@ def process_messages():
     """ Process event messages """
     hostname = "%s:%d" % (app_config["events"]["hostname"],
                           app_config["events"]["port"])
+        
     client = KafkaClient(hosts=hostname)
     topic = client.topics[str.encode(app_config["events"]["topic"])]
+    logger.info(f"Connected to topic: {app_config['events']['topic']}")
     # Create a consume on a consumer group, that only reads new messages
     # (uncommitted messages) when the service re-starts (i.e., it doesn't
     # read all the old messages from the history in the message queue).
     consumer = topic.get_simple_consumer(consumer_group=b'event_group',
                                          reset_offset_on_start=False,
-                                         auto_offset_reset=OffsetType.LATEST)
+                                         auto_offset_reset=OffsetType.EARLIEST)
     # This is blocking - it will wait for a new message
     for msg in consumer:
         msg_str = msg.value.decode('utf-8')
@@ -173,16 +190,18 @@ def process_messages():
 
 app = connexion.FlaskApp(__name__, specification_dir='')
 app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml", 
+            base_path="/storage",
             strict_validation=True, 
             validate_responses=True)
 
 if __name__ == "__main__":
     #debug_aircraft_location()
+    logger.info(f"Connecting to DB. Hostname: {app_config['datastore']['hostname']}, Port: {app_config['datastore']['port']}")
+
     t1 = Thread(target=process_messages)
     t1.setDaemon(True)
     t1.start()
 
     app.run(host='0.0.0.0',port=8090)
-    logger.info(f"Connecting to DB. Hostname: {app_config['datastore']['hostname']}, Port: {app_config['datastore']['port']}")
     
     

@@ -55,8 +55,8 @@ def report_aircraft_location(body):
     trace_id = generate_trace_id()
     body["trace_id"] = trace_id
     reading = body
-    topic = client.topics[str.encode(app_config['events']['topic'])]
-    producer = topic.get_sync_producer()
+    kafak_topic = client.topics[str.encode(app_config['events']['topic'])]
+    #producer = kafka_topic.get_sync_producer()
     msg = { "type": "location_reading",
         "datetime" :
             datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
@@ -71,8 +71,8 @@ def report_time_until_arrival(body):
     trace_id = generate_trace_id()
     body["trace_id"] = trace_id
     reading = body
-    topic = client.topics[str.encode(app_config['events']['topic'])]
-    producer = topic.get_sync_producer()
+    kafka_topic = client.topics[str.encode(app_config['events']['topic'])]
+    #producer = kafka_topic.get_sync_producer()
     msg = { "type": "time_until_arrival_reading",
         "datetime" :
             datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
@@ -82,14 +82,28 @@ def report_time_until_arrival(body):
     
     return NoContent, 201
 
-app = connexion.FlaskApp(__name__, specification_dir='')
-app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml",
-            strict_validation=True,
-            validate_responses=True)
+if "TARGET_ENV" in os.environ and os.environ["TARGET_ENV"] == "test":
+    print("In Test Environment")
+    app_conf_file = "/config/app_conf.yml"
+    log_conf_file = "/config/log_conf.yml"
+else:
+    print("In Dev Environment")
+    app_conf_file = "app_conf.yml"
+    log_conf_file = "log_conf.yml"
 
-with open('app_conf.yml', 'r') as f:
+with open(app_conf_file, 'r') as f:
     app_config = yaml.safe_load(f.read())
     
+with open(log_conf_file, 'r') as f:
+    log_config = yaml.safe_load(f.read())
+    logging.config.dictConfig(log_config)
+    
+logger = logging.getLogger('basicLogger')
+
+logger.info("App Conf File: %s" % app_conf_file)
+logger.info("Log Conf File: %s" % log_conf_file)
+
+
 hostname = app_config['events']['hostname']
 port = app_config['events']['port']
 client = KafkaClient(hosts=f'{hostname}:{port}')
@@ -97,11 +111,11 @@ client = KafkaClient(hosts=f'{hostname}:{port}')
 kafka_topic = client.topics[str.encode(app_config['events']['topic'])]
 kafka_producer = kafka_topic.get_sync_producer()
 
-with open('log_conf.yml', 'r') as f:
-    log_config = yaml.safe_load(f.read())
-    logging.config.dictConfig(log_config)
-    
-logger = logging.getLogger('basicLogger')
+app = connexion.FlaskApp(__name__, specification_dir='')
+app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml",
+            base_path="/reciever",
+            strict_validation=True,
+            validate_responses=True)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0',port=8080)
