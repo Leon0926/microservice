@@ -187,6 +187,20 @@ def process_messages():
         # Commit the new message as being read
         consumer.commit_offsets()
 
+def get_event_stats():
+    session = Session()
+
+    num_location_readings = session.query(AircraftLocation).count()
+    num_time_until_arrival_readings = session.query(ArrivalTime).count()
+
+    session.close()
+
+    stats = {
+        "num_location_readings": num_location_readings,
+        "num_time_until_arrival_readings": num_time_until_arrival_readings
+    }
+
+    return stats, 200
 
 app = connexion.FlaskApp(__name__, specification_dir='')
 app.add_api("lli249-Aircraft-Readings-1.0.0-resolved.yaml", 

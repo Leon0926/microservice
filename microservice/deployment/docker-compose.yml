@@ -127,6 +127,19 @@ services:
     depends_on:
       - "processing"
       - "analyzer"
+  check:
+    image: check
+    restart: always
+    ports:
+      - "8130"
+    networks:
+      - "api.network"
+    environment:
+      - TARGET_ENV=test
+    volumes:
+      - /home/azureuser/config/check:/config
+      - /home/azureuser/logs:/logs
+      - check-data:/data   
   nginx:
     image: nginx:latest
     # Connects the conf file of the container to the conf file in our folder
@@ -144,12 +157,28 @@ services:
       - "80:80"
     networks:
       - "api.network"
+  # anomaly_detector:
+  #   image: anomaly_detector
+  #   restart: always
+  #   ports:
+  #     - "8120"
+  #   volumes:
+  #     - /home/azureuser/logs:/logs
+  #     - /home/azureuser/config/anomaly-detector:/config
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - api.network
+  #   environment:
+  #     - TARGET_ENV=test
 
  
 # Names our volume
 volumes:
   my-db:
   processing-db:
+  check-data:
 
 networks:
   api.network:

@@ -10,42 +10,7 @@ import logging.config, logging
 import uuid
 from pykafka import KafkaClient
 
-""" MAX_EVENTS = 5
-EVENT_FILE = "events.json" """
 DATA_STORAGE_URL="http://localhost:8090/readings"
-
-""" def update_event(event_type, msg_data):
-    if not os.path.exists(EVENT_FILE):
-        events_data = {
-            "num_aircraft_location":0,
-            "recent_aircraft_location":[],
-            "num_arrival_time":0,
-            "recent_arrival_time":[]
-        }
-    else:
-        with open(EVENT_FILE, "r") as file:
-            events_data = json.load(file)
-
-    new_event = {
-        "message": msg_data,
-        "received_timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    }
-
-    if event_type == "aircraft_location":
-        events_data["num_aircraft_location"] += 1
-        events_data["recent_aircraft_location"].insert(0, new_event)
-        if len(events_data["recent_aircraft_location"]) > MAX_EVENTS:
-            events_data["recent_aircraft_location"].pop()
-
-    if event_type == "arrival_time":
-        events_data["num_arrival_time"] += 1
-        events_data["recent_arrival_time"].insert(0, new_event)
-        if len(events_data["recent_arrival_time"]) > MAX_EVENTS:
-            events_data["recent_arrival_time"].pop()
-
-    with open(EVENT_FILE, 'w') as f:
-        json.dump(events_data, f, indent=4)
- """
 
 def generate_trace_id():
     return str(uuid.uuid4())
@@ -81,6 +46,9 @@ def report_time_until_arrival(body):
     kafka_producer.produce(msg_str.encode('utf-8'))
     
     return NoContent, 201
+
+def get_check():
+    return NoContent, 200
 
 if "TARGET_ENV" in os.environ and os.environ["TARGET_ENV"] == "test":
     print("In Test Environment")

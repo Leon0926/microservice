@@ -1,0 +1,9 @@
+connexion==3.1.0
+swagger-ui-bundle==1.1.0
+requests==2.32.3
+pykafka==2.8.0
+Flask==3.0.3
+connexion[Flask]
+connexion[uvicorn]
+APScheduler==3.10.4
+PyYAML==6.0

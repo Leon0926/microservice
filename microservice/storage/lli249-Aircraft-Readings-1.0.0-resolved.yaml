@@ -89,6 +89,30 @@ paths:
                 properties:
                   message:
                     type: string
+  /stats:
+    get:
+      summary: Gets the event stats
+      operationId: app.get_event_stats
+      description: Gets the stats of the history events
+      responses:
+        '200':
+          description: Successfully returned event stats
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/EventStats'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+      
 components:
   schemas:
     LocationReading:
@@ -150,3 +174,14 @@ components:
           description: Difference between the previous actual_arrival_time reading and the current actual_arrival_time reading
           format: integer
           example: 60000
+    EventStats: 
+      required:
+        - num_location_readings
+        - num_time_until_arrival_readings
+      properties:
+        num_bp:
+          type: integer
+          example: 100 
+        num_hr:
+          type: integer
+          example: 100

@@ -1,0 +1,6 @@
+{
+    "receiver": "Healthy",
+    "storage": "Storage has 1643 Location and 1625 Time_until_arrival events",
+    "processing": "Processing has 1643 Location and 1625 Time_until_arrival events",
+    "analyzer": "Analyzer has 102 Location and 103 Time_until_arrival events"
+}
